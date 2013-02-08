@@ -16,11 +16,18 @@
 
 package org.jongo.spike;
 
+import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
-import org.bson.LazyDBList;
+import com.mongodb.WriteConcern;
+import de.undercouch.bson4jackson.BsonFactory;
+import de.undercouch.bson4jackson.BsonParser;
+import org.bson.BSONObject;
+import org.bson.BasicBSONObject;
 import org.jongo.MongoCollection;
-import org.jongo.ResultHandler;
 import org.jongo.marshall.jackson.JacksonEngine;
 import org.jongo.marshall.jackson.configuration.Mapping;
 import org.jongo.model.Friend;
@@ -30,6 +37,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -91,6 +100,43 @@ public class QuestionsSpikeTest extends JongoTestCase {
 
         assertThat(monday).contains("\"days\" : [ { \"name\" : \"monday\"}]");
     }
+
+    @Test
+    public void saveBsonObject() throws Exception {
+
+        collection.save(new BasicDBObject("test", "value"), WriteConcern.SAFE);
+    }
+
+    @Test
+    public void importBsonDumpFileIntoCollection() throws Exception {
+
+        InputStream bsonDump = getClass().getClassLoader().getResourceAsStream("friends_dump.bson");
+        BsonFactory bsonFactory = new BsonFactory();
+        //bsonFactory.enable(BsonParser.Feature.HONOR_DOCUMENT_LENGTH); // fails when enabled
+        ObjectReader reader = new ObjectMapper(bsonFactory).reader(BasicBSONObject.class);
+
+        MappingIterator<BSONObject> iterator = reader.readValues(bsonDump);
+        try {
+            while (safeHasNext(iterator)) {
+                BSONObject bsonObject = iterator.next();
+                collection.save(bsonObject, WriteConcern.SAFE);
+            }
+        } finally {
+            iterator.close();
+        }
+
+        assertThat(collection.count()).isEqualTo(1000);
+    }
+
+    private boolean safeHasNext(MappingIterator<BSONObject> iterator) {
+        try {
+            return iterator.hasNextValue();
+        } catch(IOException e) {
+            // Erroneous bson4jackson exception?
+            return false;
+        }
+    }
+
 
     private static class Friends {
         private List<Friend> friends = new ArrayList<Friend>();
