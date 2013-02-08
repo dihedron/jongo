@@ -102,12 +102,6 @@ public class QuestionsSpikeTest extends JongoTestCase {
     }
 
     @Test
-    public void saveBsonObject() throws Exception {
-
-        collection.save(new BasicDBObject("test", "value"), WriteConcern.SAFE);
-    }
-
-    @Test
     public void importBsonDumpFileIntoCollection() throws Exception {
 
         InputStream bsonDump = getClass().getClassLoader().getResourceAsStream("friends_dump.bson");
