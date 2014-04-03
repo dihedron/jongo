@@ -31,6 +31,10 @@ public class Jongo {
     public Jongo(DB database) {
         this(database, new JacksonMapper.Builder().build());
     }
+    
+    public Jongo(DB database, String token) {
+        this(database, new JacksonMapper.Builder().build(token));
+    }    
 
     public Jongo(DB database, Mapper mapper) {
         this.database = database;

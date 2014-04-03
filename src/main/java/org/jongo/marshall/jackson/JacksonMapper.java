@@ -77,7 +77,18 @@ public class JacksonMapper implements Mapper {
             }
             return new JacksonMapper(jacksonEngine, queryFactory, objectIdUpdater);
         }
-
+        
+        public Mapper build(String token) {
+            JacksonEngine jacksonEngine = new JacksonEngine(createMapping());
+            if (queryFactory == null) {
+                queryFactory = new BsonQueryFactory(jacksonEngine, token);
+            }
+            if (objectIdUpdater == null) {
+                objectIdUpdater = new ReflectiveObjectIdUpdater(new JacksonIdFieldSelector());
+            }
+            return new JacksonMapper(jacksonEngine, queryFactory, objectIdUpdater);
+        }
+        
         public Builder withQueryFactory(QueryFactory factory) {
             this.queryFactory = factory;
             return getBuilderInstance();
